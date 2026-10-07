@@ -22,8 +22,8 @@ console = Console()
 def run(split: str = typer.Option("all", help="train | holdout | all"),
         k: int = typer.Option(1, help="Runs per scenario."),
         only: str = typer.Option("", help="Comma-separated scenario id prefixes, e.g. T05,T07"),
-        no_lessons: bool = typer.Option(False, help="Ignore learned lessons (v0 baseline)."),
-        no_cache: bool = typer.Option(False, help="Disable the dev response cache."),
+        no_lessons: bool = typer.Option(False, "--no-lessons", help="Ignore learned lessons (v0 baseline)."),
+        no_cache: bool = typer.Option(False, "--no-cache", help="Disable the dev response cache."),
         budget_usd: float = typer.Option(1.0, help="Spend cap for this run."),
         label: str = typer.Option("", help="Suffix for the run id.")):
     """Run scenarios and print a scored table."""

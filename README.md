@@ -8,16 +8,32 @@ Built for the 2care.ai take-home. The spec is in [`PRD.md`](PRD.md), the design 
 ```bash
 uv sync
 cp .env.example .env        # add your OPENAI_API_KEY
-uv run pytest               # 34 tests: guardrails, checks, gate, memory, full pipeline on a fake model ($0)
+uv run pytest               # 35 tests: guardrails, checks, gate, memory, full pipeline on a fake model ($0)
 ```
 
 ## The two commands
 ```bash
 uv run chat                 # talk to the agent as a patient (tool calls shown inline)
-uv run improve              # baseline → diagnose failures → propose lessons → screen → gate → before/after report
+uv run improve              # diagnose the latest eval run → propose lessons → screen → gate → before/after report
 ```
 
-`uv run improve` options: `--k 3` runs per scenario, `--rounds 1`, `--budget-usd 2`, `--approve` (a human signs off on each lesson), `--no-cache` (use this for recorded runs), `--baseline <run_id>` (reuse an existing baseline run).
+## The flow
+```bash
+uv run evals run --split all --k 3     # 1. measure + record every conversation, check and failure in runs/<id>/
+uv run evals show <id> T07_proxy_daughter 0   #    inspect any failure
+uv run improve                          # 2. learn from that run (re-runs only to screen and gate each lesson)
+uv run memory list                      # 3. what was accepted / rejected / flagged for a human, and why
+```
+By default, `improve` reuses the **most recent saved run whose prompt, lessons and k match the current agent and that covers all scenarios**. If there isn't one, it runs the baseline itself. `improve` still has to run the agent to *screen* and *gate* each lesson: proving that a lesson helps and breaks nothing requires new conversations with it in the prompt.
+
+`uv run improve` options:
+- `--fresh-baseline`: rerun the baseline even if a matching run exists.
+- `--baseline <run_id>`: use a specific run as the baseline.
+- `--k 3`: runs per scenario. Must match the baseline run.
+- `--rounds 1`
+- `--budget-usd 2`
+- `--approve`: a human signs off on each lesson.
+- `--no-cache`: use this for recorded runs.
 
 ## Other commands
 ```bash

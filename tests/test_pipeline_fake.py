@@ -46,3 +46,23 @@ def test_improve_loop_end_to_end_with_fake_model(tmp_path, monkeypatch):
     lessons = LessonStore(store_path).lessons
     assert lessons and lessons[0].status == "rejected"   # a do-nothing agent cannot improve → gate holds
     assert {r for r, _ in fake.calls} == {"agent", "simulator", "judge", "optimizer"}
+
+
+def test_improve_reuses_latest_matching_eval_run(tmp_path, monkeypatch):
+    from evals.runner import run_suite
+    from evals.scenario import load_scenarios
+
+    fake = fake_llm()
+    for mod in (evals.runner, evals.report, improve.loop):
+        monkeypatch.setattr(mod, "RUNS_DIR", tmp_path)
+    monkeypatch.setattr(improve.loop, "LLM", lambda **kw: fake)
+    monkeypatch.setattr(improve.loop, "LessonStore", lambda: LessonStore(tmp_path / "lessons.json"))
+
+    prior = run_suite(load_scenarios("all"), [], fake, 1, "all", "evals")      # what `evals run` saves
+    run_suite(load_scenarios("train", ["T01"]), [], fake, 1, "train", "partial")  # subset: never a baseline
+    improve.loop.improve(rounds=1, k=1, max_candidates=1)
+    assert not [d for d in tmp_path.iterdir() if d.name.endswith("-baseline")]
+    assert LessonStore(tmp_path / "lessons.json").lessons[0].source.run_id == prior.run_id
+
+    improve.loop.improve(rounds=1, k=1, max_candidates=1, fresh_baseline=True)
+    assert [d for d in tmp_path.iterdir() if d.name.endswith("-baseline")]

@@ -130,3 +130,22 @@ def save_run(run: SuiteRun) -> Path:
 
 def load_run(run_id: str) -> SuiteRun:
     return SuiteRun.model_validate_json((RUNS_DIR / run_id / "results.json").read_text())
+
+
+def latest_matching_run(scenario_ids: set[str], lessons: list, k: int) -> SuiteRun | None:
+    """Most recent saved run usable as a baseline for the current agent: same prompt + lessons
+    (prompt hash), same k, covering every scenario, and not cut short by the budget."""
+    want = prompt_hash(MockEHR(), lessons)
+    for d in sorted((p for p in RUNS_DIR.iterdir() if (p / "results.json").exists()), reverse=True):
+        try:
+            run = load_run(d.name)
+        except Exception:
+            continue
+        if run.prompt_hash != want or run.k != k:
+            continue
+        if {r.scenario_id for r in run.results} != scenario_ids:
+            continue
+        if any(r.error and r.error.startswith("budget") for r in run.results):
+            continue
+        return run
+    return None

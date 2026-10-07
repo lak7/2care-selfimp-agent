@@ -18,8 +18,8 @@ app = typer.Typer(add_completion=False)
 
 
 @app.command()
-def chat(show_trace: bool = typer.Option(False, help="Print session state after each turn."),
-         no_lessons: bool = typer.Option(False, help="Run the v0 agent without learned lessons."),
+def chat(show_trace: bool = typer.Option(False, "--show-trace", help="Print session state after each turn."),
+         no_lessons: bool = typer.Option(False, "--no-lessons", help="Run the v0 agent without learned lessons."),
          budget_usd: float = typer.Option(0.5, help="Spend cap for this chat session.")):
     lessons = [] if no_lessons else LessonStore().accepted()
     ehr = MockEHR()

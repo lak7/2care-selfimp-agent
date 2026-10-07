@@ -12,7 +12,7 @@ from agent.ehr import MockEHR
 from agent.prompt import build_system_prompt
 from agent.tools import BASE_DESCRIPTIONS
 from evals.report import aggregate, print_table, render_markdown, split_summary, write_report
-from evals.runner import RUNS_DIR, SuiteRun, load_run, new_run_id, run_suite
+from evals.runner import RUNS_DIR, SuiteRun, latest_matching_run, load_run, new_run_id, run_suite
 from evals.scenario import load_scenarios
 from improve.diagnose import cluster_failures, propose
 from improve.gate import evaluate, screen
@@ -35,7 +35,8 @@ def _effective(accepted: list[Lesson], new: list[Lesson]) -> list[Lesson]:
 
 
 def improve(rounds: int = 1, k: int = 3, budget_usd: float = 2.0, approve: bool = False,
-            use_cache: bool = True, baseline_id: str | None = None, max_candidates: int = 3) -> str:
+            use_cache: bool = True, baseline_id: str | None = None, fresh_baseline: bool = False,
+            max_candidates: int = 3) -> str:
     loop_id = new_run_id("loop")
     store = LessonStore()
     llm = LLM(run_id=loop_id, run_cap=budget_usd, use_cache=use_cache)
@@ -49,8 +50,17 @@ def improve(rounds: int = 1, k: int = 3, budget_usd: float = 2.0, approve: bool 
     try:
         if baseline_id:
             baseline = load_run(baseline_id)
-            console.print(f"[bold]Baseline[/] reusing run {baseline_id}")
-        else:
+            console.print(f"[bold]Baseline[/] using run {baseline_id} (given explicitly)")
+        elif not fresh_baseline:
+            baseline = latest_matching_run({s.id for s in scenarios}, store.accepted(), k)
+            if baseline:
+                console.print(f"[bold]Baseline[/] reusing latest matching run [cyan]{baseline.run_id}[/] "
+                              f"(same prompt + lessons, k={k}, all {len(scenarios)} scenarios). "
+                              f"Use --fresh-baseline to re-run it.")
+            else:
+                console.print(f"[yellow]No saved full run matches the current agent at k={k}; "
+                              f"running a fresh baseline.[/]")
+        if baseline is None:
             console.rule("[bold]Baseline run")
             baseline = run_suite(scenarios, store.accepted(), llm, k, "all", f"{loop_id}-baseline")
             write_report(baseline)
