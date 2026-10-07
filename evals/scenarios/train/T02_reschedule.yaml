@@ -3,9 +3,9 @@ split: train
 title: Patient reschedules an existing primary care visit
 patient_id: P-001
 persona:
-  description: Maria Gonzalez, 41, busy parent, a bit hurried.
+  description: Marisol Quintero, 41, busy parent, a bit hurried.
   goal: Move her primary care appointment on Tuesday October 13 to a later day that week or the next, any afternoon.
-  hidden_facts: {full_name: Maria Gonzalez, date_of_birth: "March 14, 1985", constraint: "afternoons only, any day from Thursday October 15 onward"}
+  hidden_facts: {full_name: Marisol Quintero, date_of_birth: "March 14, 1985", constraint: "afternoons only, any day from Thursday October 15 onward"}
   opening_line: "Hi, I need to move my appointment with Dr. Carter."
 expect:
   state:

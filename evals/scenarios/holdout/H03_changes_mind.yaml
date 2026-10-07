@@ -4,9 +4,11 @@ title: Patient switches plans twice, ends by cancelling
 patient_id: P-008
 persona:
   description: Emily Novak, 36, indecisive.
-  goal: First ask to move your Monday October 12 dental appointment to later next week. Once a new time is offered and before it is booked, change your mind - you just want to cancel it entirely and will call back later.
+  goal: You start by asking to move your dental appointment, but you will end up cancelling it entirely and calling back later. Never agree to book a new time.
   hidden_facts: {full_name: Emily Novak, date_of_birth: "June 25, 1990"}
   opening_line: "Hi, I have a dental appointment on the 12th and I might need to move it."
+  script:
+    4: "Actually, you know what, don't move it. Please just cancel that appointment completely, I'll call back when I know my schedule."
 expect:
   state:
     - {check: appointment_status, args: {id: A-106, status: cancelled}}

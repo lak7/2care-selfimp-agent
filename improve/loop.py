@@ -15,9 +15,10 @@ from evals.report import aggregate, print_table, render_markdown, split_summary,
 from evals.runner import RUNS_DIR, SuiteRun, latest_matching_run, load_run, new_run_id, run_suite
 from evals.scenario import load_scenarios
 from improve.diagnose import cluster_failures, propose
-from improve.gate import evaluate, screen
+from improve.gate import evaluate, merge_runs, needs_confirmation, screen
 from llm import LLM, BudgetExceeded, ledger_total
-from memory.store import Lesson, LessonStore
+from memory.compile import clean_trigger
+from memory.store import Lesson, LessonSource, LessonStore
 
 console = Console()
 
@@ -36,11 +37,11 @@ def _effective(accepted: list[Lesson], new: list[Lesson]) -> list[Lesson]:
 
 def improve(rounds: int = 1, k: int = 3, budget_usd: float = 2.0, approve: bool = False,
             use_cache: bool = True, baseline_id: str | None = None, fresh_baseline: bool = False,
-            max_candidates: int = 3) -> str:
+            max_candidates: int = 3, profile: str = "full") -> str:
     loop_id = new_run_id("loop")
     store = LessonStore()
     llm = LLM(run_id=loop_id, run_cap=budget_usd, use_cache=use_cache)
-    scenarios = load_scenarios("all")
+    scenarios = load_scenarios("all", profile=profile)
     train = [s for s in scenarios if s.split == "train"]
     by_id = {s.id: s for s in scenarios}
     log: list[str] = []
@@ -69,25 +70,35 @@ def improve(rounds: int = 1, k: int = 3, budget_usd: float = 2.0, approve: bool 
 
         for rnd in range(1, rounds + 1):
             console.rule(f"[bold]Round {rnd}: diagnose failures")
-            clusters = cluster_failures(baseline, max_candidates)
+            # Skip failure clusters whose lesson was already rejected or sent to a human, so a
+            # second round tries the next most common failure instead of the same one.
+            tried = {l.cluster for l in store.lessons if l.cluster and l.status in ("rejected", "needs_human")}
+            clusters = [c for c in cluster_failures(baseline, max_candidates + len(tried))
+                        if c["key"] not in tried][:max_candidates]
+            if tried:
+                console.print(f"  [dim]skipping clusters already tried: {', '.join(sorted(tried))}[/]")
             if not clusters:
                 console.print("[green]No train failures left to learn from.[/]")
                 break
+            _route_style_failures(baseline, store, log)
             accepted = store.accepted()
             prompt = build_system_prompt(MockEHR(), accepted)
             candidates: list[tuple[Lesson, list[str]]] = []
             for cl in clusters:
                 console.print(f"• cluster [bold]{cl['key']}[/] ({len(cl['results'])} failed runs: "
                               f"{', '.join(cl['scenarios'])})")
-                lesson = propose(cl, prompt, BASE_DESCRIPTIONS, store.lessons, train, llm, store.next_id())
+                lesson, problems = propose(cl, prompt, BASE_DESCRIPTIONS, store.lessons, train, llm,
+                                           store.next_id(), baseline)
                 if not lesson:
-                    console.print("  [yellow]optimizer could not produce a general (lint-clean) lesson[/]")
+                    console.print(f"  [yellow]optimizer could not produce a general (lint-clean) lesson: "
+                                  f"{'; '.join(problems)}[/]")
+                    log.append(f"cluster {cl['key']}: no lesson (lint: {'; '.join(problems)})")
                     continue
                 lesson.source.run_id = baseline.run_id
                 store.add(lesson)
                 console.print(Panel(f"[bold]{lesson.id}[/] → {lesson.target}"
                                     f"{' (merges ' + ', '.join(lesson.merged_from) + ')' if lesson.merged_from else ''}\n"
-                                    f"[cyan]When[/] {lesson.trigger}: {lesson.rule}\n[dim]root cause: {lesson.root_cause}[/]",
+                                    f"[cyan]When[/] {clean_trigger(lesson.trigger)}: {lesson.rule}\n[dim]root cause: {lesson.root_cause}[/]",
                                     title="proposed lesson", expand=False))
                 if lesson.target == "needs_code":
                     lesson.status = "needs_human"
@@ -97,8 +108,12 @@ def improve(rounds: int = 1, k: int = 3, budget_usd: float = 2.0, approve: bool 
                 candidates.append((lesson, cl["scenarios"]))
             store.save()
 
-            # Screen: each candidate on its own cluster's scenarios only (cheap).
+            # Screen: each candidate on its own cluster's scenarios only (cheap). With a single
+            # candidate the gate run answers the same question, so screening is skipped.
             screened: list[tuple[Lesson, list[str]]] = []
+            if len(candidates) == 1:
+                screened, candidates = candidates, []
+                console.print("  single candidate → skipping screening, going straight to the gate")
             for lesson, targets in candidates:
                 console.rule(f"Screen {lesson.id} on {', '.join(targets)}")
                 trial = run_suite([by_id[t] for t in targets], _effective(accepted, [lesson]), llm, k,
@@ -124,9 +139,28 @@ def improve(rounds: int = 1, k: int = 3, budget_usd: float = 2.0, approve: bool 
                 console.rule(f"Gate {ids} on full suite (train + holdout)")
                 trial_lessons = _effective(store.accepted(), [l for l, _ in group])
                 gate_run = run_suite(scenarios, trial_lessons, llm, k, "all", f"{loop_id}-gate-r{rnd}")
-                record = evaluate(baseline, gate_run, sorted({t for _, ts in group for t in ts}))
+                targets = sorted({t for _, ts in group for t in ts})
+                record = evaluate(baseline, gate_run, targets)
                 print_table(gate_run, baseline, console)
                 console.print(f"  gate: {'[green]PASS[/]' if record.passed else '[red]FAIL[/]'} — {record.reason}")
+                recheck = needs_confirmation(record, targets, baseline, gate_run)
+                if recheck:
+                    # Borderline verdict: re-run just the scenarios it hinged on, with and without the
+                    # lesson, and decide on the pooled samples instead of one noisy run each.
+                    console.rule(f"Confirm: {k} more runs of {', '.join(recheck)} (with and without {ids})")
+                    extra = [by_id[s] for s in recheck]
+                    more_b = run_suite(extra, store.accepted(), llm, k, "all", f"{loop_id}-confirm-base-r{rnd}",
+                                       idx_offset=100)
+                    more_c = run_suite(extra, trial_lessons, llm, k, "all", f"{loop_id}-confirm-cand-r{rnd}",
+                                       idx_offset=100)
+                    baseline_pooled, gate_pooled = merge_runs(baseline, more_b), merge_runs(gate_run, more_c)
+                    record = evaluate(baseline_pooled, gate_pooled, targets)
+                    record.confirmed = True
+                    print_table(gate_pooled, baseline_pooled, console)
+                    console.print(f"  confirmed gate: {'[green]PASS[/]' if record.passed else '[red]FAIL[/]'}"
+                                  f" — {record.reason}")
+                    if record.passed:
+                        gate_run = gate_pooled
                 if record.passed and approve:
                     console.print(Panel(_playbook_diff(store.accepted(), trial_lessons) or "(tool notes only)",
                                         title="prompt diff"))
@@ -159,6 +193,31 @@ def improve(rounds: int = 1, k: int = 3, budget_usd: float = 2.0, approve: bool 
     return _final_report(loop_id, first_baseline, baseline, store, log, llm)
 
 
+def _route_style_failures(baseline: SuiteRun, store: LessonStore, log: list[str]) -> None:
+    """Formatting/tone failures go to a human as a code fix (text-to-speech normalisation), once."""
+    from evals.checks import STYLE_CHECKS
+    from improve.diagnose import failure_ids
+
+    hits = [r for r in baseline.results if r.split == "train" and STYLE_CHECKS & set(failure_ids(r))]
+    if not hits or any(l.cluster == "style" for l in store.lessons):
+        return
+    lesson = Lesson(id=store.next_id(), source=LessonSource(scenario=hits[0].scenario_id, run_id=baseline.run_id),
+                    violated=sorted(STYLE_CHECKS & {i for r in hits for i in failure_ids(r)}),
+                    evidence=f"{len(hits)} failed train runs have formatting/tone failures (markdown, long replies, "
+                             f"several questions per turn).",
+                    root_cause="The base prompt already asks for short spoken sentences; the model does not "
+                               "follow it reliably, and prompt rules about style apply to every turn.",
+                    target="needs_code", trigger="the agent's reply is about to be spoken",
+                    rule="Add a text-to-speech formatting step in code: strip markdown and lists, split or "
+                         "shorten replies over ~60 words, keep one question per turn.",
+                    cluster="style", status="needs_human")
+    store.add(lesson)
+    store.save()
+    log.append(f"{lesson.id}: style failures in {len(hits)} runs → needs_code (TTS formatting layer), not a prompt rule")
+    console.print(f"  [magenta]{lesson.id}: style failures ({len(hits)} runs) → flagged for a code fix "
+                  f"(TTS formatting), not learned as a prompt rule[/]")
+
+
 def _final_report(loop_id, first: SuiteRun | None, last: SuiteRun | None, store: LessonStore,
                   log: list[str], llm) -> str:
     out_dir = RUNS_DIR / loop_id
@@ -181,7 +240,7 @@ def _final_report(loop_id, first: SuiteRun | None, last: SuiteRun | None, store:
                           f"pass rate {s0['pass_rate']:.0%} → {s1['pass_rate']:.0%}")
     lines += ["", "## Lessons", ""]
     for l in store.lessons:
-        lines.append(f"- **{l.id}** [{l.status}] ({l.target}) When {l.trigger}: {l.rule}"
+        lines.append(f"- **{l.id}** [{l.status}] ({l.target}) When {clean_trigger(l.trigger)}: {l.rule}"
                      + (f"  \n  gate: {l.gate.reason}" if l.gate else ""))
     path = out_dir / "loop_report.md"
     path.write_text("\n".join(lines) + "\n")

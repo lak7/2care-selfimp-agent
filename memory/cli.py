@@ -10,6 +10,7 @@ from evals.report import print_table, split_summary, aggregate
 from evals.runner import run_suite
 from evals.scenario import load_scenarios
 from llm import LLM
+from memory.compile import clean_trigger
 from memory.store import LessonStore
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
@@ -23,7 +24,7 @@ def list_():
     for col in ("id", "status", "target", "rule", "gate"):
         t.add_column(col, overflow="fold")
     for l in LessonStore().lessons:
-        t.add_row(l.id, l.status, l.target, f"When {l.trigger}: {l.rule}", l.gate.reason if l.gate else "—")
+        t.add_row(l.id, l.status, l.target, f"When {clean_trigger(l.trigger)}: {l.rule}", l.gate.reason if l.gate else "—")
     console.print(t)
 
 
@@ -62,15 +63,15 @@ def reset(yes: bool = typer.Option(False, "--yes", help="Confirm wiping all less
 
 
 @app.command()
-def ablate(lesson_id: str, k: int = 3, split: str = "all", budget_usd: float = 1.0):
+def ablate(lesson_id: str, k: int = 3, profile: str = "full", budget_usd: float = 1.0):
     """Measure a lesson's contribution: run the suite with and without it."""
     store = LessonStore()
     with_l = store.accepted()
     without = [l for l in with_l if l.id != lesson_id]
     llm = LLM(run_id=f"ablate-{lesson_id}", run_cap=budget_usd)
-    scs = load_scenarios(split)
-    a = run_suite(scs, with_l, llm, k, split, f"ablate-{lesson_id}-with")
-    b = run_suite(scs, without, llm, k, split, f"ablate-{lesson_id}-without")
+    scs = load_scenarios("all", profile=profile)
+    a = run_suite(scs, with_l, llm, k, "all", f"ablate-{lesson_id}-with")
+    b = run_suite(scs, without, llm, k, "all", f"ablate-{lesson_id}-without")
     print_table(a, b, console)
     for s in ("train", "holdout"):
         x, y = split_summary(aggregate(b), s), split_summary(aggregate(a), s)

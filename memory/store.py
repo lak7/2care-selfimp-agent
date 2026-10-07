@@ -30,6 +30,8 @@ class GateRecord(BaseModel):
     holdout_delta: float = 0.0
     passed: bool = False
     reason: str = ""
+    flagged: list[str] = Field(default_factory=list)   # scenarios the verdict hinged on
+    confirmed: bool = False                            # re-run with extra samples before deciding
 
 
 class Lesson(BaseModel):
@@ -42,6 +44,8 @@ class Lesson(BaseModel):
     target: str  # "playbook" | "tool_desc:<tool>" | "needs_code"
     trigger: str
     rule: str
+    example: str | None = None      # a concrete phrase; small models follow examples better than rules
+    cluster: str = ""               # the failure cluster this lesson was written for
     status: Status = "candidate"
     gate: GateRecord | None = None
     merged_from: list[str] = Field(default_factory=list)

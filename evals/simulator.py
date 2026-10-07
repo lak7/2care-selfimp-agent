@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import re
+
 from evals.scenario import Scenario
 
 DONE = "[DONE]"
+DONE_RE = re.compile(r"\[\s*done\s*\]", re.I)   # nano sometimes writes [Done]
 
 
 def persona_prompt(sc: Scenario) -> str:

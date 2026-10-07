@@ -32,12 +32,23 @@ def test_merged_lesson_supersedes_and_retired_lessons_drop_out(tmp_path):
 
 def P(rule, target="playbook", tool=None):
     return LessonProposal(action="new", merge_into=None, target=target, tool=tool, trigger="a caller asks",
-                          rule=rule, root_cause="", evidence="")
+                          rule=rule, example=None, root_cause="", evidence="")
 
 
 def test_lint_rejects_overfit_rules():
     scs = load_scenarios()
     assert lint(P("Always read the slot date back before confirming."), scs) == []
     assert lint(P("Verify James Whitfield before booking."), scs)
-    assert lint(P("Offer October 16 when asked about next Friday."), scs)
+    assert lint(P("Offer March 14 when asked about next Friday."), scs)          # a DOB from the test data
+    assert not lint(P("Say dates naturally, e.g. November 3 at 2:30 PM."), scs)  # illustrative date is fine
     assert lint(P("x", target="tool_desc", tool="nope"), scs)
+
+
+def test_lint_rejects_every_turn_triggers():
+    scs = load_scenarios()
+    every = LessonProposal(action="new", merge_into=None, target="playbook", tool=None,
+                           trigger="preparing any spoken reply", rule="Be brief.", example=None,
+                           root_cause="", evidence="")
+    assert any("every turn" in p for p in lint(every, scs))
+    moment = every.model_copy(update={"trigger": "the caller asks to cancel an appointment less than 24 hours away"})
+    assert lint(moment, scs) == []

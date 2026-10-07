@@ -10,6 +10,9 @@ persona:
     phone: "857-555-0142"
     email: "(none, you prefer not to give one)"
   opening_line: "Hello, I've just moved here and I'm not a patient yet. Can I register and book a dental check-up?"
+  reactions:
+    - when: "april\\s*(3|3rd|third)|1990-04-03|3(rd)? of april"
+      say: "No, sorry, that's wrong. It's the fourth of March, March 4th, 1990. In India we write the day first."
 expect:
   state:
     - {check: patient_created, args: {full_name: Ananya Sharma, dob: "1990-03-04"}}

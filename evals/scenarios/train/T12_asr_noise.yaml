@@ -10,6 +10,11 @@ persona:
   goal: Book a dental appointment, any afternoon next week.
   hidden_facts: {full_name: Rahul Mehta, date_of_birth: "September 15, 1987 (say it as 'September fifteen, nineteen eighty-seven')"}
   opening_line: "Hi, this is Rahul Mehta, I need a dental appointment."
+  reactions:
+    - when: "\\braul\\b|metta"
+      say: "No, it's Rahul Mehta. R-A-H-U-L, M-E-H-T-A."
+    - when: "fift(y|ieth)|\\b50(th)?\\b|1987-09-50"
+      say: "No, the fifteenth. One five. September 15th, 1987."
 expect:
   state:
     - {check: appointment_booked, args: {patient: P-010, specialty: Dental, time_of_day: afternoon}}

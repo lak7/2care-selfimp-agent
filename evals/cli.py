@@ -11,7 +11,7 @@ from rich.console import Console
 from evals.report import print_table, write_report
 from evals.runner import RUNS_DIR, load_run, run_suite
 from evals.scenario import load_scenarios
-from llm import LEDGER, LLM, BudgetExceeded, ledger_total
+from llm import LEDGER, LLM, BudgetExceeded, config, ledger_total
 from memory.store import LessonStore
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
@@ -19,15 +19,17 @@ console = Console()
 
 
 @app.command()
-def run(split: str = typer.Option("all", help="train | holdout | all"),
-        k: int = typer.Option(1, help="Runs per scenario."),
+def run(profile: str = typer.Option("full", help="Scenario set from config.yaml: full | demo"),
+        split: str = typer.Option("all", help="train | holdout | all"),
+        k: int = typer.Option(0, help="Runs per scenario (default: the profile's k)."),
         only: str = typer.Option("", help="Comma-separated scenario id prefixes, e.g. T05,T07"),
         no_lessons: bool = typer.Option(False, "--no-lessons", help="Ignore learned lessons (v0 baseline)."),
         no_cache: bool = typer.Option(False, "--no-cache", help="Disable the dev response cache."),
         budget_usd: float = typer.Option(1.0, help="Spend cap for this run."),
         label: str = typer.Option("", help="Suffix for the run id.")):
     """Run scenarios and print a scored table."""
-    scenarios = load_scenarios(split, [o for o in only.split(",") if o] or None)
+    scenarios = load_scenarios(split, [o for o in only.split(",") if o] or None, profile)
+    k = k or config()["profiles"][profile]["k"]
     lessons = [] if no_lessons else LessonStore().accepted()
     llm = LLM(run_id=label or "evals", run_cap=budget_usd, use_cache=not no_cache)
     console.print(f"Running {len(scenarios)} scenario(s) × k={k} with {len(lessons)} lesson(s)…")
@@ -50,7 +52,23 @@ def report(run_id: str, compare: str = typer.Option("", help="Baseline run id fo
 
 
 @app.command()
-def show(run_id: str, scenario: str, idx: int = 0):
+def rescore(run_id: str):
+    """Re-apply the current checks to a saved run (judge calls come from the cache, so ~$0)."""
+    from evals.checks import score_result
+    from evals.runner import save_run
+
+    r = load_run(run_id)
+    by_id = {s.id: s for s in load_scenarios("all")}
+    llm = LLM(run_id=f"rescore-{run_id}", run_cap=0.2)
+    for res in r.results:
+        res.score = score_result(by_id[res.scenario_id], res, llm)
+    save_run(r)
+    print_table(r, console=console)
+    console.print(f"rescored in place · {write_report(r)} · cost ${llm.spent:.4f}")
+
+
+@app.command()
+def show(run_id: str, scenario: str, idx: int = typer.Argument(0, help="Which of the k runs (0-based).")):
     """Print one transcript with its tool calls and check results."""
     d = json.loads((RUNS_DIR / run_id / "transcripts" / f"{scenario}#{idx}.json").read_text())
     tools = defaultdict(list)

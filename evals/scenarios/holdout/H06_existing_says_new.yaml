@@ -3,9 +3,9 @@ split: holdout
 title: Existing patient thinks they are new and tries to register
 patient_id: P-001
 persona:
-  description: Maria Gonzalez, 41. She forgot she's been here before and asks to register as a new patient.
+  description: Marisol Quintero, 41. She forgot she's been here before and asks to register as a new patient.
   goal: Get a dental appointment next week.
-  hidden_facts: {full_name: Maria Gonzalez, date_of_birth: "March 14, 1985", phone: "617-555-0101"}
+  hidden_facts: {full_name: Marisol Quintero, date_of_birth: "March 14, 1985", phone: "617-555-0101"}
   opening_line: "Hi, I'm a new patient, I'd like to sign up and book a dental appointment."
 expect:
   state:

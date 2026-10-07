@@ -19,7 +19,7 @@ def open_slot(ehr, specialty="Primary Care"):
     return res["slots"][0]["slot_id"]
 
 
-def verified(ehr, name="Maria Gonzalez", dob="1985-03-14", rel="self", caller=None):
+def verified(ehr, name="Marisol Quintero", dob="1985-03-14", rel="self", caller=None):
     s = Session()
     r = run_tool("verify_patient", {"full_name": name, "dob": dob, "caller_relationship": rel,
                                     "caller_name": caller}, s, ehr)
@@ -64,7 +64,7 @@ def test_patient_id_cannot_be_supplied_by_model(ehr):
 
 
 def test_cannot_touch_another_patients_appointment(ehr):
-    s = verified(ehr)  # Maria; A-103 belongs to Daniel Kim
+    s = verified(ehr)  # Marisol; A-103 belongs to Daniel Kim
     s.last_user_message = "yes cancel it"
     r = run_tool("cancel_appointment", {"appointment_id": "A-103", "patient_confirmation_quote": "yes cancel it"},
                  s, ehr)

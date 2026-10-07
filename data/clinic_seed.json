@@ -14,7 +14,7 @@
     {"id": "PR-5", "name": "Dr. Nadia Rahman", "specialty": "Dermatology", "weekdays": [1, 3]}
   ],
   "patients": [
-    {"id": "P-001", "full_name": "Maria Gonzalez", "dob": "1985-03-14", "phone": "617-555-0101", "authorized_proxies": []},
+    {"id": "P-001", "full_name": "Marisol Quintero", "dob": "1985-03-14", "phone": "617-555-0101", "authorized_proxies": []},
     {"id": "P-002", "full_name": "James Whitfield", "dob": "1948-07-22", "phone": "617-555-0102",
      "authorized_proxies": [{"name": "Sarah Whitfield", "relationship": "daughter"}]},
     {"id": "P-003", "full_name": "Priya Raman", "dob": "1992-11-02", "phone": "617-555-0103", "authorized_proxies": []},

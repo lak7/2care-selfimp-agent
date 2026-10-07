@@ -8,7 +8,7 @@ Built for the 2care.ai take-home. The spec is in [`PRD.md`](PRD.md), the design 
 ```bash
 uv sync
 cp .env.example .env        # add your OPENAI_API_KEY
-uv run pytest               # 35 tests: guardrails, checks, gate, memory, full pipeline on a fake model ($0)
+uv run pytest               # 40 tests: guardrails, checks, gate, memory, full pipeline on a fake model ($0)
 ```
 
 ## The two commands
@@ -35,11 +35,21 @@ By default, `improve` reuses the **most recent saved run whose prompt, lessons a
 - `--approve`: a human signs off on each lesson.
 - `--no-cache`: use this for recorded runs.
 
+## Profiles: full vs demo
+- `--profile full` (the default): all 19 scenarios at k=3. This is the real result. A full suite takes about 1 minute.
+- `--profile demo`: 10 scenarios at k=2, with one lesson per round so screening is skipped. It's the same loop sized for a 5-minute recording: eval about 40 s, improve about 75 s. Its statistics are weaker.
+
+The scenario lists are in `config.yaml` under `profiles`.
+```bash
+uv run evals run --profile demo && uv run improve --profile demo && uv run evals run --profile demo
+```
+
 ## Other commands
 ```bash
 uv run evals run --split train|holdout|all --k 1 --only T05,T07   # run scenarios, print the scored table
 uv run evals show <run_id> T07_proxy_daughter 0                   # one transcript with its tool calls, checks and hard gates
 uv run evals report <run_id> --compare <baseline_run_id>          # before/after table
+uv run evals rescore <run_id>                                      # re-apply the current checks to a saved run (judge cached, ~$0)
 uv run evals cost                                                  # total OpenAI spend so far, by role
 uv run memory list | show L-001 | retire L-001 | restore L-001 | ablate L-001 | reset --yes
 uv run chat --no-lessons                                           # chat with the v0 agent

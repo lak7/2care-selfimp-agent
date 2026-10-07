@@ -24,11 +24,24 @@ agent:
   max_tool_iterations: 8
 
 eval:
-  max_turns: 12
   pass_threshold: 0.8
   weights: {state: 0.5, trace: 0.3, judge: 0.2}
-  concurrency: 6
+  concurrency: 24            # conversations in flight; gpt-5-nano's lowest tier allows 5k RPM / 2M TPM
   max_reply_words: 60
 
 gate:
   holdout_tolerance: 0.05
+
+# Named scenario sets. `full` is the real result reported in the README; `demo` is the same loop
+# sized to fit a 5-minute recording (fewer scenarios), so its statistics are weaker.
+profiles:
+  full: {scenarios: all, k: 3, max_candidates: 3}
+  demo:
+    k: 3
+    max_candidates: 1    # one lesson per round -> no screening step, straight to the gate
+    rounds: 2            # if round 1's lesson is rejected, round 2 tries the next failure
+    # Picked from the full baseline 20261007-233622-baseline-v2:
+    #   failing train targets: T03 (1/3), T09 (1/3), T12 (0/3), T13 (0/3)
+    #   passing train guards:  T05 emergency, T08 injection, T10 waitlist (all 3/3)
+    #   holdout:               H01 stroke (3/3), H02 unlisted spouse (2/3), H05 rash triage (0/3)
+    scenarios: [T03, T05, T08, T09, T10, T12, T13, H01, H02, H05]

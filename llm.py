@@ -71,6 +71,7 @@ class LLM:
         self.spent = 0.0
         self.by_role: dict[str, float] = {}
         self._client = None
+        self._local = threading.local()
 
     @property
     def client(self):
@@ -80,8 +81,15 @@ class LLM:
             load_dotenv(ROOT / ".env")
             if not os.environ.get("OPENAI_API_KEY"):
                 raise RuntimeError("OPENAI_API_KEY missing: copy .env.example to .env")
-            self._client = OpenAI()
+            self._client = OpenAI(max_retries=6)  # backs off on 429s when running many conversations
         return self._client
+
+    # Per-thread spend, so concurrent conversations each know their own cost.
+    def start_tracking(self) -> None:
+        self._local.spent = 0.0
+
+    def tracked(self) -> float:
+        return getattr(self._local, "spent", 0.0)
 
     def _check_budget(self) -> None:
         if self.spent >= self.run_cap:
@@ -128,6 +136,7 @@ class LLM:
         output = [o.model_dump(exclude_none=True, mode="json") for o in resp.output]
         result = LLMResult(output, resp.output_text or "", parsed, usage, cost)
 
+        self._local.spent = getattr(self._local, "spent", 0.0) + cost
         with _lock:
             self.spent += cost
             self.by_role[role] = self.by_role.get(role, 0.0) + cost
@@ -151,10 +160,18 @@ class FakeLLM:
         self.spent = 0.0
         self.by_role: dict[str, float] = {}
         self.calls: list[tuple[str, list]] = []
+        self._lock = threading.Lock()
+
+    def start_tracking(self) -> None:
+        pass
+
+    def tracked(self) -> float:
+        return 0.0
 
     def respond(self, role, input, instructions=None, tools=None, text_format=None, salt=""):
-        self.calls.append((role, list(input)))
-        return self.script[role](input, tools)
+        with self._lock:
+            self.calls.append((role, list(input)))
+            return self.script[role](input, tools)
 
 
 def fake_text(text: str) -> LLMResult:

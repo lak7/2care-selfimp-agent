@@ -17,6 +17,14 @@ class Persona(BaseModel):
     hidden_facts: dict[str, str] = Field(default_factory=dict)
     opening_line: str
     style: str = "Cooperative, natural, brief."
+    # Exact lines the patient says at a given patient turn (turn 1 = opening line). Used for the
+    # events a scenario exists to test (an emergency, a change of mind), so they always happen
+    # instead of being left to the simulator's discretion.
+    script: dict[int, str] = Field(default_factory=dict)
+    # Deterministic corrections: if the receptionist's reply matches `when` (regex, case-insensitive),
+    # the patient says `say` next (once). A small simulator model often fails to notice a wrong
+    # read-back, which would make the failure impossible for the agent to learn from.
+    reactions: list[dict[str, str]] = Field(default_factory=list)
 
 
 class Behaviors(BaseModel):
@@ -56,11 +64,18 @@ class Scenario(BaseModel):
     persona: Persona
     behaviors: Behaviors = Field(default_factory=Behaviors)
     world_events: list[WorldEvent] = Field(default_factory=list)
-    max_turns: int = 12
+    max_turns: int = 10
     expect: Expect = Field(default_factory=Expect)
 
 
-def load_scenarios(split: str = "all", only: list[str] | None = None) -> list[Scenario]:
+def load_scenarios(split: str = "all", only: list[str] | None = None,
+                   profile: str | None = None) -> list[Scenario]:
+    """`profile` (from config.yaml `profiles`) restricts to a named scenario set, e.g. the demo set."""
+    if profile:
+        from llm import config
+        ids = config()["profiles"][profile]["scenarios"]
+        if not only and ids != "all":  # an explicit --only wins over the profile's list
+            only = ids
     out = []
     for path in sorted(SCENARIO_DIR.glob("*/*.yaml")):
         sc = Scenario(**yaml.safe_load(path.read_text()))

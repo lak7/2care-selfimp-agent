@@ -14,6 +14,11 @@ persona:
     patient_name: Grace Okafor
     patient_date_of_birth: "February 11, 1940 (say 'February eleventh, nineteen forty')"
   opening_line: "Hello, I need to book a doctor's visit for my mother, Grace Okafor."
+  reactions:
+    - when: "grays|oak-?for"
+      say: "No, Grace Okafor. G-R-A-C-E, O-K-A-F-O-R."
+    - when: "seventh|\\b7th\\b|02-07|february 7"
+      say: "No, the eleventh. February 11th, 1940."
 expect:
   state:
     - {check: appointment_booked, args: {patient: P-009, specialty: Primary Care, time_of_day: afternoon, booked_by: proxy}}

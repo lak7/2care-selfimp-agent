@@ -1,6 +1,7 @@
-"""System prompt assembly: fixed base sections + the learned Playbook compiled from lessons.
+"""System prompt assembly: the learned Playbook compiled from lessons + the fixed base sections.
 
-The Playbook goes last so the static prefix stays identical across runs (prompt caching).
+The Playbook goes FIRST: in testing, gpt-5-nano largely ignored rules appended after the base
+prompt. Costs a little prompt caching once lessons exist; worth it.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ def build_system_prompt(ehr: MockEHR, lessons: list) -> str:
         clinic_name=ehr.clinic["name"], now_spoken=spoken_time(now), timezone=ehr.clinic["timezone"],
         today_iso=now.date().isoformat(), providers=providers)
     playbook = playbook_text(lessons)
-    return text + ("\n" + playbook if playbook else "")
+    return (playbook + "\n" if playbook else "") + text
 
 
 def build_tools(lessons: list) -> list[dict]:

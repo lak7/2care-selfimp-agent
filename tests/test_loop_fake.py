@@ -14,7 +14,7 @@ def test_booking_flow_through_loop():
     ehr = MockEHR()
     slot = ehr.search_slots("Dental", None, ehr.now.date(), ehr.now.date().replace(day=16), None)[0]
     llm = FakeLLM({"agent": scripted([
-        fake_call("verify_patient", {"full_name": "Maria Gonzalez", "dob": "1985-03-14",
+        fake_call("verify_patient", {"full_name": "Marisol Quintero", "dob": "1985-03-14",
                                      "caller_relationship": "self", "caller_name": None}, "c1"),
         fake_call("hold_slot", {"slot_id": slot.id}, "c2"),
         fake_text("I have that held. Shall I book it?"),
@@ -22,7 +22,7 @@ def test_booking_flow_through_loop():
         fake_text("You're all set."),
     ])})
     agent = Agent(ehr, llm)
-    assert agent.step("Hi, Maria Gonzalez, March 14 1985, I need a dental visit") == \
+    assert agent.step("Hi, Marisol Quintero, March 14 1985, I need a dental visit") == \
         "I have that held. Shall I book it?"
     assert agent.step("Yes book it please") == "You're all set."
     assert [t["tool"] for t in agent.trace] == ["verify_patient", "hold_slot", "confirm_booking"]
@@ -44,3 +44,14 @@ def test_playbook_compiles_into_prompt():
     assert "[L-001] When a caller books for someone else: Verify" in agent.instructions
     verify = next(x for x in agent.tools if x["name"] == "verify_patient")
     assert verify["description"].endswith("Note: Use the patient's name.")
+
+
+def test_playbook_goes_first_with_example():
+    from memory.store import Lesson, LessonSource
+    l = Lesson(id="L-001", source=LessonSource(scenario="T03", run_id="r"), violated=[], evidence="e",
+               root_cause="r", target="playbook", trigger="a caller cancels within 24 hours",
+               rule="Mention the late fee before cancelling.", example="Just so you know, there's a late fee.",
+               status="accepted")
+    prompt = Agent(MockEHR(), FakeLLM({}), [l]).instructions
+    assert prompt.startswith("## Playbook")
+    assert 'For example, say: "Just so you know, there\'s a late fee."' in prompt

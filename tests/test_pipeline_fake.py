@@ -19,7 +19,7 @@ def fake_llm():
     def optimizer(input, tools):
         return LLMResult([], "", parsed=LessonProposal(
             action="new", merge_into=None, target="playbook", tool=None, trigger="a caller wants an appointment",
-            rule="Verify identity first, then search and offer real slots.", root_cause="r", evidence="e"))
+            rule="Verify identity first, then search and offer real slots.", example=None, root_cause="r", evidence="e"))
 
     sim_turns = {}
 
