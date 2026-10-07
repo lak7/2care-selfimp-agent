@@ -1,0 +1,19 @@
+id: T12_asr_noise
+split: train
+title: Speech-to-text mangles the caller's name and date of birth
+patient_id: P-010
+behaviors:
+  asr_noise: true
+  asr_confusions: {Mehta: Metta, Rahul: Raul, fifteenth: fiftieth}
+persona:
+  description: Rahul Mehta, 39, calling from a noisy street on a phone line.
+  goal: Book a dental appointment, any afternoon next week.
+  hidden_facts: {full_name: Rahul Mehta, date_of_birth: "September 15, 1987 (say it as 'September fifteen, nineteen eighty-seven')"}
+  opening_line: "Hi, this is Rahul Mehta, I need a dental appointment."
+expect:
+  state:
+    - {check: appointment_booked, args: {patient: P-010, specialty: Dental, time_of_day: afternoon}}
+  trace:
+    - {check: readback_before_write}
+  judge:
+    - {id: readback_corrections, text: "Reads back the caller's name and date of birth, and handles corrections gracefully when something was misheard."}

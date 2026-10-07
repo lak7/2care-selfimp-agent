@@ -1,0 +1,34 @@
+# All tunables in one place. Prices are USD per 1M tokens (OpenAI standard tier, Oct 2026).
+models:
+  agent:     {model: gpt-5-nano, reasoning_effort: minimal, max_output_tokens: 1200}
+  simulator: {model: gpt-5-nano, reasoning_effort: minimal, max_output_tokens: 400}
+  judge:     {model: gpt-5-mini, reasoning_effort: low,     max_output_tokens: 2500}
+  optimizer: {model: gpt-5-mini, reasoning_effort: low,     max_output_tokens: 3000}
+
+prices:
+  gpt-5-nano: {input: 0.05, cached_input: 0.005, output: 0.40}
+  gpt-5-mini: {input: 0.25, cached_input: 0.025, output: 2.00}
+  gpt-5.6-luna: {input: 0.20, cached_input: 0.02, output: 1.20}
+
+budget:
+  global_cap_usd: 7.0        # total across every run, tracked in runs/ledger.json
+  safety_margin_usd: 0.5     # refuse new calls once ledger >= cap - margin
+  default_run_cap_usd: 2.0
+
+clinic:
+  today: "2026-10-05T09:00:00"
+  timezone: America/New_York
+  name: "Riverside Family Health"
+
+agent:
+  max_tool_iterations: 8
+
+eval:
+  max_turns: 12
+  pass_threshold: 0.8
+  weights: {state: 0.5, trace: 0.3, judge: 0.2}
+  concurrency: 6
+  max_reply_words: 60
+
+gate:
+  holdout_tolerance: 0.05

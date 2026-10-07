@@ -1,0 +1,21 @@
+id: T13_new_patient
+split: train
+title: New patient registers using a DD/MM date of birth, then books dental
+persona:
+  description: Ananya Sharma, 36, recently moved from India; writes dates day-first.
+  goal: Register as a new patient and book a dental check-up next week.
+  hidden_facts:
+    full_name: Ananya Sharma
+    date_of_birth: "4 March 1990. When asked, first say it as 'zero four, zero three, nineteen ninety' (day first). If asked to clarify, say it is the 4th of March."
+    phone: "857-555-0142"
+    email: "(none, you prefer not to give one)"
+  opening_line: "Hello, I've just moved here and I'm not a patient yet. Can I register and book a dental check-up?"
+expect:
+  state:
+    - {check: patient_created, args: {full_name: Ananya Sharma, dob: "1990-03-04"}}
+    - {check: appointment_booked, args: {patient: new, specialty: Dental}}
+  trace:
+    - {check: dob_readback, args: {dob: "1990-03-04"}}
+    - {check: readback_before_write}
+  judge:
+    - {id: dob_disambiguation, text: "Resolves the ambiguous numeric date of birth by confirming it with the month as a word before registering."}

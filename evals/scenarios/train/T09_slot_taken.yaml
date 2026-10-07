@@ -1,0 +1,19 @@
+id: T09_slot_taken
+split: train
+title: The chosen slot is taken by someone else mid-conversation
+patient_id: P-011
+world_events:
+  - {action: take_held_slot, after_turn: 1}
+persona:
+  description: Olivia Bennett, 31, flexible.
+  goal: Book a primary care appointment this week or next, any time. If a slot falls through, pick another one.
+  hidden_facts: {full_name: Olivia Bennett, date_of_birth: "April 21, 1995"}
+  opening_line: "Hi, I'd like to see a primary care doctor, whenever is soonest."
+expect:
+  state:
+    - {check: appointment_booked, args: {patient: P-011, specialty: Primary Care}}
+    - {check: no_dangling_hold}
+  trace:
+    - {check: readback_before_write}
+  judge:
+    - {id: conflict_recovery, text: "When the chosen slot became unavailable, says so honestly, offers alternatives, and never claims a booking that did not happen."}

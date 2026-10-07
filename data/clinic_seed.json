@@ -1,0 +1,40 @@
+{
+  "clinic": {"name": "Riverside Family Health", "timezone": "America/New_York", "today": "2026-10-05T09:00:00"},
+  "schedule": {
+    "days_ahead": 14,
+    "slot_minutes": 30,
+    "blocks": [["09:00", "12:00"], ["13:00", "17:00"]],
+    "prebooked_ratio": 0.45
+  },
+  "providers": [
+    {"id": "PR-1", "name": "Dr. Emily Carter", "specialty": "Primary Care", "weekdays": [0, 1, 2, 3, 4]},
+    {"id": "PR-2", "name": "Dr. Marcus Reed", "specialty": "Primary Care", "weekdays": [0, 2, 4]},
+    {"id": "PR-3", "name": "Dr. Hannah Lee", "specialty": "Dental", "weekdays": [0, 1, 3, 4]},
+    {"id": "PR-4", "name": "Dr. Victor Alvarez", "specialty": "Orthopedics", "weekdays": [1, 2, 3]},
+    {"id": "PR-5", "name": "Dr. Nadia Rahman", "specialty": "Dermatology", "weekdays": [1, 3]}
+  ],
+  "patients": [
+    {"id": "P-001", "full_name": "Maria Gonzalez", "dob": "1985-03-14", "phone": "617-555-0101", "authorized_proxies": []},
+    {"id": "P-002", "full_name": "James Whitfield", "dob": "1948-07-22", "phone": "617-555-0102",
+     "authorized_proxies": [{"name": "Sarah Whitfield", "relationship": "daughter"}]},
+    {"id": "P-003", "full_name": "Priya Raman", "dob": "1992-11-02", "phone": "617-555-0103", "authorized_proxies": []},
+    {"id": "P-004", "full_name": "Daniel Kim", "dob": "1979-01-30", "phone": "617-555-0104", "authorized_proxies": []},
+    {"id": "P-005", "full_name": "Robert Chen", "dob": "1960-05-09", "phone": "617-555-0105", "authorized_proxies": []},
+    {"id": "P-006", "full_name": "Aisha Patel", "dob": "2001-08-17", "phone": "617-555-0106", "authorized_proxies": []},
+    {"id": "P-007", "full_name": "Thomas O'Brien", "dob": "1955-12-03", "phone": "617-555-0107", "authorized_proxies": []},
+    {"id": "P-008", "full_name": "Emily Novak", "dob": "1990-06-25", "phone": "617-555-0108", "authorized_proxies": []},
+    {"id": "P-009", "full_name": "Grace Okafor", "dob": "1940-02-11", "phone": "617-555-0109",
+     "authorized_proxies": [{"name": "Michael Okafor", "relationship": "son"}]},
+    {"id": "P-010", "full_name": "Rahul Mehta", "dob": "1987-09-15", "phone": "617-555-0110", "authorized_proxies": []},
+    {"id": "P-011", "full_name": "Olivia Bennett", "dob": "1995-04-21", "phone": "617-555-0111", "authorized_proxies": []}
+  ],
+  "appointments": [
+    {"id": "A-101", "patient_id": "P-001", "slot_id": "S-PR-1-20261013-1000"},
+    {"id": "A-102", "patient_id": "P-003", "slot_id": "S-PR-1-20261005-1600"},
+    {"id": "A-103", "patient_id": "P-004", "slot_id": "S-PR-5-20261008-1100"},
+    {"id": "A-104", "patient_id": "P-005", "slot_id": "S-PR-4-20261007-1400"},
+    {"id": "A-105", "patient_id": "P-006", "slot_id": "S-PR-1-20261009-0930"},
+    {"id": "A-106", "patient_id": "P-008", "slot_id": "S-PR-3-20261012-1500"},
+    {"id": "A-107", "patient_id": "P-009", "slot_id": "S-PR-2-20261014-1000"}
+  ]
+}

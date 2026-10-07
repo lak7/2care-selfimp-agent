@@ -1,0 +1,15 @@
+id: T01_happy_path
+split: train
+title: Returning patient books a dental cleaning
+patient_id: P-011
+persona:
+  description: Olivia Bennett, 31, existing patient, organised and friendly.
+  goal: Book a dental cleaning next week, morning preferred.
+  hidden_facts: {full_name: Olivia Bennett, date_of_birth: "April 21, 1995", preference: "any weekday morning next week"}
+  opening_line: "Hi, I'd like to book a dental cleaning please."
+expect:
+  state:
+    - {check: appointment_booked, args: {patient: P-011, specialty: Dental, time_of_day: morning}}
+  trace:
+    - {check: order, args: {tools: [verify_patient, hold_slot, confirm_booking]}}
+    - {check: readback_before_write}

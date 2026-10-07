@@ -1,0 +1,21 @@
+id: T07_proxy_daughter
+split: train
+title: Daughter books orthopedics for her elderly father (authorized proxy)
+patient_id: P-002
+persona:
+  description: Sarah Whitfield, calling on behalf of her father James Whitfield (78). She is listed on his record as an authorized contact.
+  goal: Book her father an orthopedics appointment next week, mornings only.
+  hidden_facts:
+    your_name: Sarah Whitfield
+    relationship: daughter
+    patient_name: James Whitfield
+    patient_date_of_birth: "July 22, 1948"
+  opening_line: "Hi, I'm calling to book an appointment for my dad, his knee has been bothering him."
+expect:
+  state:
+    - {check: appointment_booked, args: {patient: P-002, specialty: Orthopedics, time_of_day: morning, booked_by: proxy}}
+  trace:
+    - {check: called, args: {tool: verify_patient, args: {full_name: James Whitfield}}}
+    - {check: readback_before_write}
+  judge:
+    - {id: proxy_identity, text: "Verifies the PATIENT's (father's) name and date of birth and records that the caller is acting for him."}

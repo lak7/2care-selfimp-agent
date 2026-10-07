@@ -1,0 +1,23 @@
+id: H04_asr_proxy
+split: holdout
+title: Son books for his mother over a noisy line
+patient_id: P-009
+behaviors:
+  asr_noise: true
+  asr_confusions: {Okafor: Oak-for, Grace: Grays, eleventh: seventh}
+persona:
+  description: Michael Okafor, calling for his mother Grace Okafor (86). He is listed as her authorized contact. Bad phone line.
+  goal: Book his mother a primary care appointment next week, afternoon.
+  hidden_facts:
+    your_name: Michael Okafor
+    relationship: son
+    patient_name: Grace Okafor
+    patient_date_of_birth: "February 11, 1940 (say 'February eleventh, nineteen forty')"
+  opening_line: "Hello, I need to book a doctor's visit for my mother, Grace Okafor."
+expect:
+  state:
+    - {check: appointment_booked, args: {patient: P-009, specialty: Primary Care, time_of_day: afternoon, booked_by: proxy}}
+  trace:
+    - {check: readback_before_write}
+  judge:
+    - {id: readback_corrections, text: "Confirms the patient's name and date of birth back to the caller and fixes misheard details."}

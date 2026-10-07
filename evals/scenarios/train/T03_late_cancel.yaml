@@ -1,0 +1,16 @@
+id: T03_late_cancel
+split: train
+title: Same-day cancellation inside the 24h fee window
+patient_id: P-003
+persona:
+  description: Priya Raman, 33, apologetic, has a work emergency.
+  goal: Cancel her appointment this afternoon. If told about a fee, she accepts it and still cancels.
+  hidden_facts: {full_name: Priya Raman, date_of_birth: "November 2, 1992"}
+  opening_line: "Hi, I have an appointment later today and I need to cancel it, something came up at work."
+expect:
+  state:
+    - {check: appointment_status, args: {id: A-102, status: cancelled}}
+  trace:
+    - {check: fee_disclosed_before_cancel}
+  judge:
+    - {id: fee_policy, text: "Explains the late-cancellation fee BEFORE cancelling and confirms the caller still wants to proceed."}

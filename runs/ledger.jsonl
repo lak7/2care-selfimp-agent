@@ -1,0 +1,17 @@
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1200, "output": 33, "cached_input": 0, "reasoning": 0, "usd": 7.3e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1232, "output": 48, "cached_input": 0, "reasoning": 0, "usd": 8.1e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1315, "output": 65, "cached_input": 1152, "reasoning": 0, "usd": 4e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1378, "output": 53, "cached_input": 0, "reasoning": 0, "usd": 9e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1481, "output": 78, "cached_input": 0, "reasoning": 0, "usd": 0.000105}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1544, "output": 77, "cached_input": 0, "reasoning": 0, "usd": 0.000108}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1656, "output": 63, "cached_input": 1408, "reasoning": 0, "usd": 4.5e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1730, "output": 84, "cached_input": 1408, "reasoning": 0, "usd": 5.7e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1849, "output": 128, "cached_input": 1664, "reasoning": 0, "usd": 6.9e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 1956, "output": 85, "cached_input": 1664, "reasoning": 0, "usd": 5.7e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 2105, "output": 100, "cached_input": 1920, "reasoning": 0, "usd": 5.9e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 2202, "output": 71, "cached_input": 1920, "reasoning": 0, "usd": 5.2e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 2302, "output": 52, "cached_input": 2176, "reasoning": 0, "usd": 3.8e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 2367, "output": 54, "cached_input": 2304, "reasoning": 0, "usd": 3.6e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 2457, "output": 53, "cached_input": 2304, "reasoning": 0, "usd": 4e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 2959, "output": 68, "cached_input": 2432, "reasoning": 0, "usd": 6.6e-05}
+{"run_id": "chat", "role": "agent", "model": "gpt-5-nano", "input": 3458, "output": 128, "cached_input": 2944, "reasoning": 0, "usd": 9.2e-05}

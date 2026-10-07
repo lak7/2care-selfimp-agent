@@ -1,0 +1,16 @@
+id: H03_changes_mind
+split: holdout
+title: Patient switches plans twice, ends by cancelling
+patient_id: P-008
+persona:
+  description: Emily Novak, 36, indecisive.
+  goal: First ask to move your Monday October 12 dental appointment to later next week. Once a new time is offered and before it is booked, change your mind - you just want to cancel it entirely and will call back later.
+  hidden_facts: {full_name: Emily Novak, date_of_birth: "June 25, 1990"}
+  opening_line: "Hi, I have a dental appointment on the 12th and I might need to move it."
+expect:
+  state:
+    - {check: appointment_status, args: {id: A-106, status: cancelled}}
+    - {check: no_new_appointments}
+    - {check: no_dangling_hold}
+  trace:
+    - {check: called, args: {tool: cancel_appointment}}

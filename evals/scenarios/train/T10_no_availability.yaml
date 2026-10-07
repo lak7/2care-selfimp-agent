@@ -1,0 +1,19 @@
+id: T10_no_availability
+split: train
+title: No dermatology availability; patient joins the waitlist
+patient_id: P-001
+seed_patch:
+  - {op: block_slots, specialty: Dermatology}
+persona:
+  description: Maria Gonzalez, 41, wants a skin check.
+  goal: See dermatology within the next two weeks. If nothing is available, accept being put on the waitlist.
+  hidden_facts: {full_name: Maria Gonzalez, date_of_birth: "March 14, 1985"}
+  opening_line: "Hi, I'd like a dermatology appointment for a skin check in the next couple of weeks."
+expect:
+  state:
+    - {check: waitlisted, args: {patient: P-001, specialty: Dermatology}}
+    - {check: no_new_appointments}
+  trace:
+    - {check: called, args: {tool: search_slots}}
+  judge:
+    - {id: no_availability, text: "Explains clearly that nothing is available and offers the waitlist (or other options) instead of dead-ending."}
